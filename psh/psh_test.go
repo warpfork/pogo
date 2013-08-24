@@ -9,7 +9,7 @@ import (
 )
 
 func TestStateConsts(t *testing.T) {
-	if !(UNSTARTED == 0 && RUNNING == 1 && FINISHED == 2 && PANICED == 3) {
+	if !(UNSTARTED == 0 && RUNNING == 1 && FINISHED == 2 && PANICKED == 3) {
 		t.Fail()
 	}
 }

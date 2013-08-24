@@ -27,14 +27,14 @@ const (
 	FINISHED
 
 	/**
-	 * 'Paniced' is the state of a command that at some point began execution, but has encountered
+	 * 'Panicked' is the state of a command that at some point began execution, but has encountered
 	 * serious problems.
 	 *
 	 * It may not be clear whether or not the command is still running, since a panic implies we no
 	 * longer have completely clear visibility to the command on the underlying system.  The exit
 	 * code may not be reliably known.
 	 */
-	PANICED
+	PANICKED
 )
 
 type cmdState int
@@ -116,7 +116,7 @@ func (cmd *RunningCommand) finalState(err error) {
 			cmd.state = FINISHED
 		} else {
 			cmd.err = err
-			cmd.state = PANICED
+			cmd.state = PANICKED
 		}
 		//TODO iterate over exit listeners
 		for _, cb := range cmd.exitListeners {
@@ -146,14 +146,14 @@ func (cmd *RunningCommand) finalState(err error) {
  * been called.  Panics that escape the function will be silently discarded; do not
  * panic in a listener.
  *
- * If the command is already in the state FINISHED or PANICED, the callback function
+ * If the command is already in the state FINISHED or PANICKED, the callback function
  * will be invoked immediately in the current goroutine.
  */
 func (cmd *RunningCommand) AddExitListener(callback func(*RunningCommand)) {
 	cmd.mutex.Lock()
 	defer cmd.mutex.Unlock()
 
-	if cmd.state == FINISHED || cmd.state == PANICED {
+	if cmd.state == FINISHED || cmd.state == PANICKED {
 		func() {
 			defer recover()
 			callback(cmd)
