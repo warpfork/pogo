@@ -16,7 +16,7 @@ func (err CommandStartError) Cause() error {
 }
 
 func (err CommandStartError) Error() string {
-	return fmt.Sprintf("error starting command: %s", err.Cause)
+	return fmt.Sprintf("error starting command: %s", err.Cause())
 }
 
 /**
@@ -32,5 +32,5 @@ func (err CommandMonitorError) Cause() error {
 }
 
 func (err CommandMonitorError) Error() string {
-	return fmt.Sprintf("error monitoring command: %s", err.Cause)
+	return fmt.Sprintf("error monitoring command: %s", err.Cause())
 }
