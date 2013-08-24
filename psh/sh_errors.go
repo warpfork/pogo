@@ -2,6 +2,7 @@ package psh
 
 import (
 	"fmt"
+	"reflect"
 )
 
 /**
@@ -17,5 +18,18 @@ type IncomprehensibleCommandModifier struct {
 }
 
 func (err IncomprehensibleCommandModifier) Error() string {
-	return fmt.Sprintf("sh: incomprehensible command modifier: do not want type \"%T\"", err.wat)
+	return fmt.Sprintf("sh: incomprehensible command modifier: do not want type \"%v\"", whoru(reflect.ValueOf(*err.wat)))
+}
+
+func whoru(val reflect.Value) string {
+	kind := val.Kind()
+	typ := val.Type()
+
+	if kind == reflect.Ptr {
+		return fmt.Sprintf("*%s", whoru(val.Elem()))
+	} else if kind == reflect.Interface {
+		return whoru(val.Elem())
+	} else {
+		return typ.Name()
+	}
 }
