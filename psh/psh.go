@@ -1,1 +1,191 @@
 package psh
+
+import (
+	"os/exec"
+	"sync"
+	"syscall"
+	"time"
+)
+
+const (
+	/**
+	 * 'Unstarted' is the state of a command that has been constructed, but execution has not yet begun.
+	 */
+	UNSTARTED cmdState = iota
+
+	/**
+	 * 'Running' is the state of a command that has begun execution, but not yet finished.
+	 */
+	RUNNING
+
+	/**
+	 * 'Finished' is the state of a command that has finished normally.
+	 *
+	 * The exit code may or may not have been success, but at the very least we
+	 * successfully observed that exit code.
+	 */
+	FINISHED
+
+	/**
+	 * 'Paniced' is the state of a command that at some point began execution, but has encountered
+	 * serious problems.
+	 *
+	 * It may not be clear whether or not the command is still running, since a panic implies we no
+	 * longer have completely clear visibility to the command on the underlying system.  The exit
+	 * code may not be reliably known.
+	 */
+	PANICED
+)
+
+type cmdState int
+
+func NewRunningCommand(cmd *exec.Cmd) *RunningCommand {
+	return &RunningCommand{
+		cmd:      cmd,
+		state:    UNSTARTED,
+		exitCh:   make(chan bool),
+		exitCode: -1,
+	}
+}
+
+type RunningCommand struct {
+	mutex sync.Mutex
+
+	state cmdState
+
+	cmd *exec.Cmd
+	//TODO: or: callback func() int
+
+	/** If this is set, game over. */
+	err error
+
+	/** Wait for this to close in order to wait for the process to return. */
+	exitCh chan bool
+
+	/** Exit code if we're state==FINISHED and exit codes are possible on this platform, or
+	 * -1 if we're not there yet.  Will not change after exitCh has closed. */
+	exitCode int
+}
+
+func (cmd *RunningCommand) startCalmly() error {
+	cmd.mutex.Lock()
+	defer cmd.mutex.Unlock()
+
+	if cmd.state != UNSTARTED {
+		return nil
+	}
+
+	cmd.state = RUNNING
+	if err := cmd.cmd.Start(); err != nil {
+		cmd.finalState(CommandStartError{cause: err})
+		return cmd.err
+	}
+
+	go cmd.waitAndHandleExit()
+	return nil
+}
+
+func (cmd *RunningCommand) waitAndHandleExit() {
+	err := cmd.cmd.Wait()
+
+	cmd.mutex.Lock()
+	defer cmd.mutex.Unlock()
+
+	if err == nil {
+		cmd.exitCode = 0
+	} else if exitError, ok := err.(*exec.ExitError); ok {
+		if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
+			cmd.exitCode = waitStatus.ExitStatus()
+		} else {
+			panic(exitError) //TODO: damage control better.  consider setting some kind of CommandMonitorError.
+		}
+	} else {
+		panic(err) //TODO: damage control better.  consider setting some kind of CommandMonitorError.
+	}
+	cmd.finalState(nil)
+}
+
+func (cmd *RunningCommand) finalState(err error) {
+	// must hold cmd.mutex before calling this
+	// golang is an epic troll: claims to be best buddy for concurrent code, SYNC PACKAGE DOES NOT HAVE REENTRANT LOCKS
+	if cmd.state == RUNNING {
+		if err != nil {
+			cmd.state = FINISHED
+		} else {
+			cmd.err = err
+			cmd.state = PANICED
+		}
+		//TODO iterate over exit listeners
+	}
+	close(cmd.exitCh)
+}
+
+/**
+ * Add a function to be called when this command completes.
+ *
+ * These listener functions will be invoked after the exit code and other command
+ * state is final, but before other methods Wait() and GetExitCode() unblock.
+ * (This means if you want for example to log a message that a process exited, and
+ * your main function is Wait()'ing for that process... if you use AddExitListener()
+ * to invoke your log function then you will always get the log.)
+ */
+func (cmd *RunningCommand) AddExitListener(callback func(*RunningCommand)) {
+	//TODO
+}
+
+/**
+ * Returns a channel that will be open until the command is complete.
+ * This is suitable for use in a select block.
+ */
+func (cmd *RunningCommand) GetExitChannel() <-chan bool {
+	return cmd.exitCh
+}
+
+/**
+ * Waits for the command to exit before returning.
+ *
+ * There are no consequences to waiting on a single command repeatedly;
+ * all wait calls will return normally when the command completes.  The order
+ * in which multiple wait calls will return is undefined.  Similarly, there
+ * are no consequences to waiting on a command that has not yet started;
+ * the function will still wait without error until the command finishes.
+ * (Much friendlier than os.exec.Cmd.Wait(), neh?)
+ */
+func (cmd *RunningCommand) Wait() {
+	<-cmd.GetExitChannel()
+}
+
+/**
+ * Waits for the command to exit before returning, or for the specified duration.
+ * Returns true if the return was due to the command finishing, or false if the
+ * return was due to timeout.
+ */
+func (cmd *RunningCommand) WaitSoon(d time.Duration) bool {
+	select {
+	case <-time.After(d):
+		return false
+	case <-cmd.GetExitChannel():
+		return true
+	}
+}
+
+/**
+ * Waits for the command to exit if it has not already, then returns the exit code.
+ */
+func (cmd *RunningCommand) GetExitCode() int {
+	cmd.Wait()
+	return cmd.exitCode
+}
+
+/**
+ * Waits for the command to exit if it has not already, or for the specified duration,
+ * then either returns the exit code, or -1 if the duration expired and the command
+ * still hasn't returned.
+ */
+func (cmd *RunningCommand) GetExitCodeSoon(d time.Duration) int {
+	if cmd.WaitSoon(d) {
+		return cmd.exitCode
+	} else {
+		return -1
+	}
+}
