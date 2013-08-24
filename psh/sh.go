@@ -75,3 +75,16 @@ func (f sh) BakeArgs(args ...string) sh {
 func (cmdt *commandTemplate) bakeArgs(args ...string) {
 	cmdt.args = append(cmdt.args, args...)
 }
+
+/**
+ * Starts execution of the command.  Returns a reference to a RunningCommand,
+ * which can be used to track execution of the command, configure exit listeners,
+ * etc.
+ */
+func (f sh) Start() *RunningCommand {
+	cmdt := f.expose()
+	rcmd := exec.Command(cmdt.cmd, cmdt.args...)
+	cmd := NewRunningCommand(rcmd)
+	cmd.Start()
+	return cmd
+}
