@@ -96,3 +96,25 @@ func TestPshExitListeners(t *testing.T) {
 		cmdr.State(),
 	)
 }
+
+func TestPshExitCode(t *testing.T) {
+	assert := assrt.NewAssert(t)
+
+	cmdr := NewRunningCommand(
+		exec.Command("sh", []string{"-c", "exit 22"}...),
+	)
+	cmdr.startCalmly()
+	cmdr.WaitSoon(1 * time.Second)
+	assert.Equal(
+		22,
+		cmdr.GetExitCode(),
+	)
+	assert.Equal(
+		nil,
+		cmdr.err,
+	)
+	assert.Equal(
+		FINISHED,
+		cmdr.State(),
+	)
+}
