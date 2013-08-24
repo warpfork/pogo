@@ -12,4 +12,8 @@ func main() {
 	cat := Sh("cat")
 	catIn := cat.BakeArgs("-")
 	catIn()
+
+	shell := Sh("bash")("-c")
+
+	shell("exit 56")()
 }

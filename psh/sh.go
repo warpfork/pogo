@@ -1,7 +1,6 @@
 package psh
 
 import (
-	"os"
 	"os/exec"
 )
 
@@ -22,15 +21,9 @@ type exposer struct{ cmdt *commandTemplate }
 
 func closure(cmdt commandTemplate, args ...interface{}) sh {
 	if len(args) == 0 {
-		// an empty call is a trigger for actually starting execution.
-		bareCmd := exec.Command(cmdt.cmd, cmdt.args...)
-		// set up direct stdin by hack for now
-		bareCmd.Stdin = os.Stdin
-		bareCmd.Stdout = os.Stdout
-		bareCmd.Stderr = os.Stderr
-		cmd := NewRunningCommand(bareCmd)
-		cmd.Start()
-		cmd.Wait()
+		// an empty call is a synonym for sh.Run().
+		// if you want to just get a RunningCommand reference to track, use sh.Start() instead.
+		enclose(&cmdt).Run()
 		return nil
 	} else if args[0] == expose {
 		// produce a function that when called with an exposer, exposes its cmdt.
@@ -87,4 +80,15 @@ func (f sh) Start() *RunningCommand {
 	cmd := NewRunningCommand(rcmd)
 	cmd.Start()
 	return cmd
+}
+
+func (f sh) Run() {
+	cmdt := f.expose()
+	cmd := f.Start()
+	cmd.Wait()
+	exitCode := cmd.GetExitCode()
+	//TODO support configurable expected exit codes
+	if exitCode != 0 {
+		panic(FailureExitCode{cmdname: cmdt.cmd, code: exitCode})
+	}
 }

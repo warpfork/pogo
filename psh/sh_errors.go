@@ -33,3 +33,18 @@ func whoru(val reflect.Value) string {
 		return typ.Name()
 	}
 }
+
+/**
+ * Error for commands run by Sh that exited with a non-successful status.
+ *
+ * What exactly qualifies as an unsuccessful status can be defined per command,
+ * but by default is any exit code other than zero.
+ */
+type FailureExitCode struct {
+	cmdname string
+	code int
+}
+
+func (err FailureExitCode) Error() string {
+	return fmt.Sprintf("sh: command \"%s\" exited with unexpected status %d", err.cmdname, err.code)
+}
