@@ -9,9 +9,7 @@ import (
 func Sh(cmd string) sh {
 	var cmdt commandTemplate
 	cmdt.cmd = cmd
-	return func(args ...interface{}) sh {
-		return closure(cmdt, args...)
-	}
+	return enclose(&cmdt)
 }
 
 type sh func(args ...interface{}) sh
@@ -56,9 +54,7 @@ func closure(cmdt commandTemplate, args ...interface{}) sh {
 				// ignore, for now
 			}
 		}
-		return func(x ...interface{}) sh {
-			return closure(cmdt, x...)
-		}
+		return enclose(&cmdt)
 	}
 }
 
@@ -68,12 +64,16 @@ func (f sh) expose() commandTemplate {
 	return *t.cmdt
 }
 
+func enclose(cmdt *commandTemplate) sh {
+	return func(x ...interface{}) sh {
+		return closure(*cmdt, x...)
+	}
+}
+
 func (f sh) BakeArgs(args ...string) sh {
 	cmdt := f.expose()
 	cmdt.bakeArgs(args...)
-	return func(x ...interface{}) sh {
-		return closure(cmdt, x...)
-	}
+	return enclose(&cmdt)
 }
 
 func (cmdt *commandTemplate) bakeArgs(args ...string) {
