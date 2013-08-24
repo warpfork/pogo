@@ -27,3 +27,16 @@ func TestPshExecBasic(t *testing.T) {
 		cmdr.GetExitCode(),
 	)
 }
+
+func TestPshWaitTimeout(t *testing.T) {
+	assert := assrt.NewAssert(t)
+
+	cmdr := NewRunningCommand(
+		exec.Command("sleep", "1"),
+	)
+	cmdr.startCalmly()
+	assert.Equal(
+		false,
+		cmdr.WaitSoon(20 * time.Millisecond),
+	)
+}
