@@ -69,11 +69,10 @@ func TestPshExitListeners(t *testing.T) {
 	wg.Add(1)
 	cmdr.AddExitListener(func(*RunningCommand) {
 		defer wg.Done()
-		// Trying to do this is a trap.  GetExitCode uses Wait internally, and as a listener we block Wait.
-		// assert.Equal(
-		// 	0,
-		// 	cmdr.GetExitCode(),
-		// )
+		assert.Equal(
+			0,
+			cmdr.GetExitCode(),
+		)
 		assert.Equal(
 			nil,
 			cmdr.err,
