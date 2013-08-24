@@ -1,6 +1,7 @@
 package psh
 
 import (
+	"github.com/coocood/assrt"
 	"os/exec"
 	"testing"
 	"time"
@@ -12,11 +13,17 @@ func TestStateConsts(t *testing.T) {
 	}
 }
 
+// Test that we can exec something, wait, and it returns quickly and with an exit code.
 func TestPshExecBasic(t *testing.T) {
+	assert := assrt.NewAssert(t)
+
 	cmdr := NewRunningCommand(
 		exec.Command("echo"),
 	)
 	cmdr.startCalmly()
 	cmdr.WaitSoon(1 * time.Second)
-	cmdr.GetExitCode()
+	assert.Equal(
+		0,
+		cmdr.GetExitCode(),
+	)
 }
