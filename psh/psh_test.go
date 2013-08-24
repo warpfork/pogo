@@ -3,6 +3,7 @@ package psh
 import (
 	"github.com/coocood/assrt"
 	"os/exec"
+	"sync"
 	"testing"
 	"time"
 )
@@ -53,6 +54,46 @@ func TestPshWaitTimeout(t *testing.T) {
 	)
 	assert.Equal(
 		RUNNING,
+		cmdr.state,
+	)
+}
+
+func TestPshExitListeners(t *testing.T) {
+	assert := assrt.NewAssert(t)
+
+	cmdr := NewRunningCommand(
+		exec.Command("echo"),
+	)
+	cmdr.startCalmly()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	cmdr.AddExitListener(func(*RunningCommand) {
+		defer wg.Done()
+		// Trying to do this is a trap.  GetExitCode uses Wait internally, and as a listener we block Wait.
+		// assert.Equal(
+		// 	0,
+		// 	cmdr.GetExitCode(),
+		// )
+		assert.Equal(
+			nil,
+			cmdr.err,
+		)
+		assert.Equal(
+			FINISHED,
+			cmdr.state,
+		)
+	})
+	wg.Wait()
+	assert.Equal(
+		0,
+		cmdr.GetExitCode(),
+	)
+	assert.Equal(
+		nil,
+		cmdr.err,
+	)
+	assert.Equal(
+		FINISHED,
 		cmdr.state,
 	)
 }

@@ -65,6 +65,9 @@ type RunningCommand struct {
 	/** Exit code if we're state==FINISHED and exit codes are possible on this platform, or
 	 * -1 if we're not there yet.  Will not change after exitCh has closed. */
 	exitCode int
+
+	/** Functions to call back when the command has exited. */
+	exitListeners []func(*RunningCommand)
 }
 
 func (cmd *RunningCommand) startCalmly() error {
@@ -116,6 +119,12 @@ func (cmd *RunningCommand) finalState(err error) {
 			cmd.state = PANICED
 		}
 		//TODO iterate over exit listeners
+		for _, cb := range cmd.exitListeners {
+			func() {
+				defer recover()
+				cb(cmd)
+			}()
+		}
 	}
 	close(cmd.exitCh)
 }
@@ -127,10 +136,31 @@ func (cmd *RunningCommand) finalState(err error) {
  * state is final, but before other methods Wait() and GetExitCode() unblock.
  * (This means if you want for example to log a message that a process exited, and
  * your main function is Wait()'ing for that process... if you use AddExitListener()
- * to invoke your log function then you will always get the log.)
+ * to invoke your log function then you will always get the log.)  By the other side
+ * of the same coin of course is you can't use GetExitCode() from inside a listener,
+ * or it will block forever; so, if you need such methods, then you should be doing
+ * your work in a goroutine that's Wait()'ing, not in an exit listener.
+ *
+ * The listener function should complete quickly and not try to perform other blocking
+ * operations or locks, since other actions are waiting until the listeners have all
+ * been called.  Panics that escape the function will be silently discarded; do not
+ * panic in a listener.
+ *
+ * If the command is already in the state FINISHED or PANICED, the callback function
+ * will be invoked immediately in the current goroutine.
  */
 func (cmd *RunningCommand) AddExitListener(callback func(*RunningCommand)) {
-	//TODO
+	cmd.mutex.Lock()
+	defer cmd.mutex.Unlock()
+
+	if cmd.state == FINISHED || cmd.state == PANICED {
+		func() {
+			defer recover()
+			callback(cmd)
+		}()
+	} else {
+		cmd.exitListeners = append(cmd.exitListeners, callback)
+	}
 }
 
 /**
@@ -173,6 +203,8 @@ func (cmd *RunningCommand) WaitSoon(d time.Duration) bool {
  * Waits for the command to exit if it has not already, then returns the exit code.
  */
 func (cmd *RunningCommand) GetExitCode() int {
+	// It does bother me that this blocks if called in an exit listener.
+	// But if we checked for already complete command state before waiting, I'm afraid we'd open up another can of worms (racing worms!) entirely about that promise of exit listeners all going before Wait methods unblock.
 	cmd.Wait()
 	return cmd.exitCode
 }
