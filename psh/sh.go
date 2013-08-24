@@ -60,13 +60,12 @@ func enclose(cmdt *commandTemplate) sh {
 }
 
 func (f sh) BakeArgs(args ...string) sh {
-	cmdt := f.expose()
-	cmdt.bakeArgs(args...)
-	return enclose(&cmdt)
+	return enclose(f.expose().bakeArgs(args...))
 }
 
-func (cmdt *commandTemplate) bakeArgs(args ...string) {
+func (cmdt *commandTemplate) bakeArgs(args ...string) *commandTemplate {
 	cmdt.args = append(cmdt.args, args...)
+	return cmdt
 }
 
 /**
