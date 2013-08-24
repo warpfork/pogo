@@ -1,7 +1,6 @@
 package psh
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 )
@@ -22,11 +21,8 @@ const expose expose_t = true
 type exposer struct{ cmdt *commandTemplate }
 
 func closure(cmdt commandTemplate, args ...interface{}) sh {
-	fmt.Fprintf(os.Stderr, "closure! :: %d args: %#v\n\n", len(args), args)
-
 	if len(args) == 0 {
-		fmt.Fprintf(os.Stderr, "running :: %#v\n\n", cmdt)
-
+		// an empty call is a trigger for actually starting execution.
 		bareCmd := exec.Command(cmdt.cmd, cmdt.args...)
 		// set up direct stdin by hack for now
 		bareCmd.Stdin = os.Stdin
@@ -37,15 +33,15 @@ func closure(cmdt commandTemplate, args ...interface{}) sh {
 		cmd.Wait()
 		return nil
 	} else if args[0] == expose {
-		fmt.Fprintf(os.Stderr, "exposing :: %#v\n\n", cmdt)
-		// produce a function that when called exposes its cmdt.
+		// produce a function that when called with an exposer, exposes its cmdt.
 		return func(x ...interface{}) sh {
 			t := x[0].(*exposer)
 			t.cmdt = &cmdt
 			return nil
 		}
 	} else {
-		fmt.Fprintf(os.Stderr, "modifying :: %#v\n\n", cmdt)
+		// examine each of the arguments, modify our (already forked) cmdt, and
+		//  return a new callable sh closure with the newly baked command template.
 		for _, rarg := range args {
 			switch arg := rarg.(type) {
 			case string:
