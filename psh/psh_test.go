@@ -26,6 +26,14 @@ func TestPshExecBasic(t *testing.T) {
 		0,
 		cmdr.GetExitCode(),
 	)
+	assert.Equal(
+		nil,
+		cmdr.err,
+	)
+	assert.Equal(
+		FINISHED,
+		cmdr.state,
+	)
 }
 
 func TestPshWaitTimeout(t *testing.T) {

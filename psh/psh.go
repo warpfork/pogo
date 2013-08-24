@@ -109,7 +109,7 @@ func (cmd *RunningCommand) finalState(err error) {
 	// must hold cmd.mutex before calling this
 	// golang is an epic troll: claims to be best buddy for concurrent code, SYNC PACKAGE DOES NOT HAVE REENTRANT LOCKS
 	if cmd.state == RUNNING {
-		if err != nil {
+		if err == nil {
 			cmd.state = FINISHED
 		} else {
 			cmd.err = err
