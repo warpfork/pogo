@@ -3,6 +3,7 @@ package psh
 import (
 	"os/exec"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 )
@@ -11,7 +12,7 @@ const (
 	/**
 	 * 'Unstarted' is the state of a command that has been constructed, but execution has not yet begun.
 	 */
-	UNSTARTED cmdState = iota
+	UNSTARTED int32 = iota
 
 	/**
 	 * 'Running' is the state of a command that has begun execution, but not yet finished.
@@ -37,8 +38,6 @@ const (
 	PANICKED
 )
 
-type cmdState int
-
 func NewRunningCommand(cmd *exec.Cmd) *RunningCommand {
 	return &RunningCommand{
 		cmd:      cmd,
@@ -51,7 +50,10 @@ func NewRunningCommand(cmd *exec.Cmd) *RunningCommand {
 type RunningCommand struct {
 	mutex sync.Mutex
 
-	state cmdState
+	/** Always access this with functions from the atomic package, and when
+	* transitioning states set the status after all other fields are mutated,
+	* so that checks of State() serve as a memory barrier for all. */
+	state int32
 
 	cmd *exec.Cmd
 	//TODO: or: callback func() int
@@ -70,15 +72,43 @@ type RunningCommand struct {
 	exitListeners []func(*RunningCommand)
 }
 
+func (cmd *RunningCommand) State() int32 {
+	return atomic.LoadInt32(&cmd.state)
+}
+
+/** Returns true if the command is current running. */
+func (cmd *RunningCommand) IsRunning() bool {
+	state := cmd.State()
+	return state == RUNNING
+}
+
+/** Returns true if the command has ever been started (including if the command is already finished). */
+func (cmd *RunningCommand) IsStarted() bool {
+	state := cmd.State()
+	return state == RUNNING || state == FINISHED || state == PANICKED
+}
+
+/** Returns true if the command is finished (either gracefully, or with internal errors). */
+func (cmd *RunningCommand) IsDone() bool {
+	state := cmd.State()
+	return state == FINISHED || state == PANICKED
+}
+
+/** Returns true if the command is finished either gracefully.  (A nonzero exit code may still be set.) */
+func (cmd *RunningCommand) IsFinishedGracefully() bool {
+	state := cmd.State()
+	return state == FINISHED
+}
+
 func (cmd *RunningCommand) startCalmly() error {
 	cmd.mutex.Lock()
 	defer cmd.mutex.Unlock()
 
-	if cmd.state != UNSTARTED {
+	if cmd.IsStarted() {
 		return nil
 	}
 
-	cmd.state = RUNNING
+	atomic.StoreInt32(&cmd.state, RUNNING)
 	if err := cmd.cmd.Start(); err != nil {
 		cmd.finalState(CommandStartError{cause: err})
 		return cmd.err
@@ -111,12 +141,12 @@ func (cmd *RunningCommand) waitAndHandleExit() {
 func (cmd *RunningCommand) finalState(err error) {
 	// must hold cmd.mutex before calling this
 	// golang is an epic troll: claims to be best buddy for concurrent code, SYNC PACKAGE DOES NOT HAVE REENTRANT LOCKS
-	if cmd.state == RUNNING {
+	if cmd.IsRunning() {
 		if err == nil {
-			cmd.state = FINISHED
+			atomic.StoreInt32(&cmd.state, FINISHED)
 		} else {
 			cmd.err = err
-			cmd.state = PANICKED
+			atomic.StoreInt32(&cmd.state, PANICKED)
 		}
 		//TODO iterate over exit listeners
 		for _, cb := range cmd.exitListeners {
@@ -150,7 +180,7 @@ func (cmd *RunningCommand) AddExitListener(callback func(*RunningCommand)) {
 	cmd.mutex.Lock()
 	defer cmd.mutex.Unlock()
 
-	if cmd.state == FINISHED || cmd.state == PANICKED {
+	if cmd.IsDone() {
 		func() {
 			defer recover()
 			callback(cmd)
@@ -200,7 +230,7 @@ func (cmd *RunningCommand) WaitSoon(d time.Duration) bool {
  * Waits for the command to exit if it has not already, then returns the exit code.
  */
 func (cmd *RunningCommand) GetExitCode() int {
-	if !(cmd.state == FINISHED || cmd.state == PANICKED) {
+	if !cmd.IsDone() {
 		cmd.Wait()
 	}
 	return cmd.exitCode

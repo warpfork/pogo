@@ -33,7 +33,7 @@ func TestPshExecBasic(t *testing.T) {
 	)
 	assert.Equal(
 		FINISHED,
-		cmdr.state,
+		cmdr.State(),
 	)
 }
 
@@ -54,7 +54,7 @@ func TestPshWaitTimeout(t *testing.T) {
 	)
 	assert.Equal(
 		RUNNING,
-		cmdr.state,
+		cmdr.State(),
 	)
 }
 
@@ -79,7 +79,7 @@ func TestPshExitListeners(t *testing.T) {
 		)
 		assert.Equal(
 			FINISHED,
-			cmdr.state,
+			cmdr.State(),
 		)
 	})
 	wg.Wait()
@@ -93,6 +93,6 @@ func TestPshExitListeners(t *testing.T) {
 	)
 	assert.Equal(
 		FINISHED,
-		cmdr.state,
+		cmdr.State(),
 	)
 }
