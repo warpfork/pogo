@@ -100,6 +100,12 @@ func (cmd *RunningCommand) IsFinishedGracefully() bool {
 	return state == FINISHED
 }
 
+func (cmd *RunningCommand) Start() {
+	if err := cmd.startCalmly(); err != nil {
+		panic(err)
+	}
+}
+
 func (cmd *RunningCommand) startCalmly() error {
 	cmd.mutex.Lock()
 	defer cmd.mutex.Unlock()
