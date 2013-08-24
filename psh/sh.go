@@ -47,7 +47,7 @@ func closure(cmdt commandTemplate, args ...interface{}) sh {
 			case string:
 				cmdt.bakeArgs(arg)
 			default:
-				panic(IncomprehensibleCommandModifier{wat:&rarg})
+				panic(IncomprehensibleCommandModifier{wat: &rarg})
 			}
 		}
 		return enclose(&cmdt)
