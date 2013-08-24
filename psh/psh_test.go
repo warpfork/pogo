@@ -118,3 +118,25 @@ func TestPshExitCode(t *testing.T) {
 		cmdr.State(),
 	)
 }
+
+func TestPshNonexistentCommandPanics(t *testing.T) {
+	assert := assrt.NewAssert(t)
+
+	cmdr := NewRunningCommand(
+		exec.Command("/thishadbetternotbeacommand"),
+	)
+	cmdr.startCalmly()
+	cmdr.WaitSoon(1 * time.Second)
+	assert.Equal(
+		-1,
+		cmdr.GetExitCode(),
+	)
+	assert.NotEqual(
+		nil,
+		cmdr.err,
+	)
+	assert.Equal(
+		PANICKED,
+		cmdr.State(),
+	)
+}
