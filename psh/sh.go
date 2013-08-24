@@ -47,10 +47,10 @@ func closure(cmdt commandTemplate, args ...interface{}) sh {
 	}
 }
 
-func (f sh) expose() commandTemplate {
+func (f sh) expose() *commandTemplate {
 	var t exposer
 	f(expose)(&t)
-	return *t.cmdt
+	return t.cmdt
 }
 
 func enclose(cmdt *commandTemplate) sh {
