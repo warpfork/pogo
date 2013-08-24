@@ -39,4 +39,12 @@ func TestPshWaitTimeout(t *testing.T) {
 		false,
 		cmdr.WaitSoon(20 * time.Millisecond),
 	)
+	assert.Equal(
+		-1,
+		cmdr.exitCode,
+	)
+	assert.Equal(
+		RUNNING,
+		cmdr.state,
+	)
 }
