@@ -16,6 +16,13 @@ func Sh(cmd string) sh {
 
 type sh func(args ...interface{}) sh
 
+// private type, used exactly once to create a const nobody else can create so we can use it as a flag to trigger private behavior
+type expose_t bool
+
+const expose expose_t = true
+
+type exposer struct{ cmdt *commandTemplate }
+
 func closure(cmdt commandTemplate, args ...interface{}) sh {
 	fmt.Fprintf(os.Stderr, "closure! :: %d args: %#v\n\n", len(args), args)
 
@@ -31,6 +38,14 @@ func closure(cmdt commandTemplate, args ...interface{}) sh {
 		cmd.Start()
 		cmd.Wait()
 		return nil
+	} else if args[0] == expose {
+		fmt.Fprintf(os.Stderr, "exposing :: %#v\n\n", cmdt)
+		// produce a function that when called exposes its cmdt.
+		return func(x ...interface{}) sh {
+			t := x[0].(*exposer)
+			t.cmdt = &cmdt
+			return nil
+		}
 	} else {
 		fmt.Fprintf(os.Stderr, "modifying :: %#v\n\n", cmdt)
 		for _, rarg := range args {
@@ -47,9 +62,19 @@ func closure(cmdt commandTemplate, args ...interface{}) sh {
 	}
 }
 
-// func (sh sh) BakeArgs(opts Opts) sh {
-// 	return 
-// }
+func (f sh) expose() commandTemplate {
+	var t exposer
+	f(expose)(&t)
+	return *t.cmdt
+}
+
+func (f sh) BakeArgs(args ...string) sh {
+	cmdt := f.expose()
+	cmdt.bakeArgs(args...)
+	return func(x ...interface{}) sh {
+		return closure(cmdt, x...)
+	}
+}
 
 func (cmdt *commandTemplate) bakeArgs(args ...string) {
 	cmdt.args = append(cmdt.args, args...)
