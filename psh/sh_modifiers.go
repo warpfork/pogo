@@ -11,7 +11,7 @@ type commandTemplate struct {
 }
 
 type Opts struct {
-	Cwd string
+	Cwd *string
 
 	/**
 	 * Can be a:
@@ -36,6 +36,11 @@ type Opts struct {
 	 * strings are immutable in golang, you can't set Out=&str and get anywhere.)
 	 */
 	Out interface{}
+
+	/**
+	 * Can be all the same things Out can be, and does the same thing, but for stderr.
+	 */
+	Err interface{}
 }
 
 type Env map[string]string

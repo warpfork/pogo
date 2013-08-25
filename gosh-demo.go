@@ -2,10 +2,12 @@ package main
 
 import (
 	. "polydawn.net/gosh/psh"
+	"os"
 )
 
 func main() {
-	echo := Sh("echo")("-n", "-e")
+	echo := Sh("echo")("-n", "-e").
+		BakeOpts(Opts{In: os.Stdin, Out: os.Stdout})
 
 	echo("wat\n", "\t\033[0;31mred and indented\033[0m\n")()
 
