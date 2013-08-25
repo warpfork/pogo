@@ -45,6 +45,12 @@ type Opts struct {
 	 * Can be all the same things Out can be, and does the same thing, but for stderr.
 	 */
 	Err interface{}
+
+	/**
+	 * Exit status codes that are to be considered "successful".  If not provided, [0] is the default.
+	 * (If this slice is provided, zero will -not- be considered a success code unless explicitly included.)
+	 */
+	OkExit []int
 }
 
 var DefaultIO = Opts{

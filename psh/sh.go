@@ -10,6 +10,7 @@ func Sh(cmd string) sh {
 	var cmdt commandTemplate
 	cmdt.cmd = cmd
 	cmdt.env = getOsEnv()
+	cmdt.OkExit = []int{0}
 	return enclose(&cmdt)
 }
 
@@ -119,6 +120,9 @@ func (cmdt *commandTemplate) bakeOpts(args ...Opts) *commandTemplate {
 		if arg.Err != nil {
 			cmdt.Err = arg.Err
 		}
+		if arg.OkExit != nil {
+			cmdt.OkExit = arg.OkExit
+		}
 	}
 	return cmdt
 }
@@ -183,8 +187,10 @@ func (f sh) Run() {
 	cmd := f.Start()
 	cmd.Wait()
 	exitCode := cmd.GetExitCode()
-	//TODO support configurable expected exit codes
-	if exitCode != 0 {
-		panic(FailureExitCode{cmdname: cmdt.cmd, code: exitCode})
+	for _, okcode := range cmdt.OkExit {
+		if exitCode == okcode {
+			return
+		}
 	}
+	panic(FailureExitCode{cmdname: cmdt.cmd, code: exitCode})
 }

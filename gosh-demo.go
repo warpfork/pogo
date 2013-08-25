@@ -21,5 +21,5 @@ func main() {
 
 	shell(ClearEnv{})("echo $TERM > testlag2")()
 
-	shell(Env{"VAR": "59"})("exit $VAR")()
+	shell(Env{"VAR": "59"})(Opts{OkExit:[]int{59}})("exit $VAR")()
 }
