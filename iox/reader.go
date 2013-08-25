@@ -38,7 +38,7 @@ func ReaderFromChanString(ch <-chan string) io.Reader {
 }
 
 type readerChanString struct {
-	ch <-chan string
+	ch  <-chan string
 	buf []byte
 }
 
@@ -63,9 +63,9 @@ func (r *readerChanString) Read(p []byte) (n int, err error) {
 	r.buf = bytes[w2:]
 
 	if open || len(r.buf) > 0 {
-		return w+w2, nil
+		return w + w2, nil
 	} else {
-		return w+w2, io.EOF
+		return w + w2, io.EOF
 	}
 }
 
@@ -74,7 +74,7 @@ func ReaderFromChanByteSlice(ch <-chan []byte) io.Reader {
 }
 
 type readerChanByteSlice struct {
-	ch <-chan []byte
+	ch  <-chan []byte
 	buf []byte
 }
 
@@ -98,8 +98,8 @@ func (r *readerChanByteSlice) Read(p []byte) (n int, err error) {
 	r.buf = bytes[w2:]
 
 	if open || len(r.buf) > 0 {
-		return w+w2, nil
+		return w + w2, nil
 	} else {
-		return w+w2, io.EOF
+		return w + w2, io.EOF
 	}
 }

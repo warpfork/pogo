@@ -2,8 +2,8 @@ package iox
 
 import (
 	"bytes"
-	"io"
 	"github.com/coocood/assrt"
+	"io"
 	"testing"
 )
 

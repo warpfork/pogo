@@ -42,7 +42,7 @@ func whoru(val reflect.Value) string {
  */
 type FailureExitCode struct {
 	cmdname string
-	code int
+	code    int
 }
 
 func (err FailureExitCode) Error() string {

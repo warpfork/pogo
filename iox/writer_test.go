@@ -3,8 +3,8 @@ package iox
 import (
 	"github.com/coocood/assrt"
 	"io"
-	"testing"
 	"sync"
+	"testing"
 )
 
 func TestWriterToChanString(t *testing.T) {
@@ -20,11 +20,11 @@ func TestWriterToChanString(t *testing.T) {
 		close(ch)
 	}()
 
-	assert.Equal("asdf", <- ch)
-	assert.Equal("", <- ch)
-	assert.Equal("\nwakawaka", <- ch)
-	assert.Equal("\tz", <- ch)
-	_, open := <- ch
+	assert.Equal("asdf", <-ch)
+	assert.Equal("", <-ch)
+	assert.Equal("\nwakawaka", <-ch)
+	assert.Equal("\tz", <-ch)
+	_, open := <-ch
 	assert.Equal(false, open)
 }
 
@@ -46,8 +46,8 @@ func TestWriterToChanStringClosed(t *testing.T) {
 		wg.Done()
 	}()
 
-	assert.Equal("asdf", <- ch)
-	_, open := <- ch
+	assert.Equal("asdf", <-ch)
+	_, open := <-ch
 	assert.Equal(false, open)
 	wg.Wait()
 }
@@ -65,10 +65,10 @@ func TestWriterToChanByteSlice(t *testing.T) {
 		close(ch)
 	}()
 
-	assert.Equal([]byte("asdf"), <- ch)
-	assert.Equal([]byte(""), <- ch)
-	assert.Equal([]byte("\nwakawaka"), <- ch)
-	assert.Equal([]byte("\tz"), <- ch)
-	_, open := <- ch
+	assert.Equal([]byte("asdf"), <-ch)
+	assert.Equal([]byte(""), <-ch)
+	assert.Equal([]byte("\nwakawaka"), <-ch)
+	assert.Equal([]byte("\tz"), <-ch)
+	_, open := <-ch
 	assert.Equal(false, open)
 }
