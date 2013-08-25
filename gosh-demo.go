@@ -2,6 +2,7 @@ package main
 
 import (
 	. "polydawn.net/gosh/psh"
+	"os"
 )
 
 func main() {
@@ -12,7 +13,7 @@ func main() {
 
 	cat := Sh("cat")
 	catIn := cat.BakeArgs("-")
-	catIn()
+	catIn(Opts{In:"piping in things is easy!\n", Out: os.Stdout})()
 
 	shell := Sh("bash")("-c")
 
