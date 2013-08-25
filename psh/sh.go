@@ -1,12 +1,14 @@
 package psh
 
 import (
+	"fmt"
 	"os/exec"
 )
 
 func Sh(cmd string) sh {
 	var cmdt commandTemplate
 	cmdt.cmd = cmd
+	cmdt.env = getOsEnv()
 	return enclose(&cmdt)
 }
 
@@ -39,6 +41,10 @@ func closure(cmdt commandTemplate, args ...interface{}) sh {
 			switch arg := rarg.(type) {
 			case string:
 				cmdt.bakeArgs(arg)
+			case Env:
+				cmdt.bakeEnv(arg)
+			case ClearEnv:
+				cmdt.clearEnv()
 			default:
 				panic(IncomprehensibleCommandModifier{wat: &rarg})
 			}
@@ -68,6 +74,30 @@ func (cmdt *commandTemplate) bakeArgs(args ...string) *commandTemplate {
 	return cmdt
 }
 
+func (f sh) BakeEnv(args Env) sh {
+	return enclose(f.expose().bakeEnv(args))
+}
+
+func (cmdt *commandTemplate) bakeEnv(args Env) *commandTemplate {
+	for k, v := range args {
+		if v == "" {
+			delete(cmdt.env, k)
+		} else {
+			cmdt.env[k] = v
+		}
+	}
+	return cmdt
+}
+
+func (f sh) ClearEnv() sh {
+	return enclose(f.expose().clearEnv())
+}
+
+func (cmdt *commandTemplate) clearEnv() *commandTemplate {
+	cmdt.env = make(map[string]string)
+	return cmdt
+}
+
 /**
  * Starts execution of the command.  Returns a reference to a RunningCommand,
  * which can be used to track execution of the command, configure exit listeners,
@@ -76,6 +106,18 @@ func (cmdt *commandTemplate) bakeArgs(args ...string) *commandTemplate {
 func (f sh) Start() *RunningCommand {
 	cmdt := f.expose()
 	rcmd := exec.Command(cmdt.cmd, cmdt.args...)
+
+	// set up env
+	if cmdt.env != nil {
+		rcmd.Env = make([]string, len(cmdt.env))
+		i := 0
+		for k, v := range cmdt.env {
+			rcmd.Env[i] = fmt.Sprintf("%s=%s", k, v)
+			i++
+		}
+	}
+
+	// go time
 	cmd := NewRunningCommand(rcmd)
 	cmd.Start()
 	return cmd

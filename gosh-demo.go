@@ -15,5 +15,9 @@ func main() {
 
 	shell := Sh("bash")("-c")
 
-	shell("exit 56")()
+	shell("echo $TERM > testlag")()
+
+	shell(ClearEnv{})("echo $TERM > testlag2")()
+
+	shell(Env{"VAR": "59"})("exit $VAR")()
 }

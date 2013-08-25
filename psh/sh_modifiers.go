@@ -5,7 +5,7 @@ type commandTemplate struct {
 
 	args []string
 
-	env map[string]string
+	env Env
 
 	Opts
 }
@@ -23,3 +23,7 @@ type Opts struct {
 	 */
 	In interface{}
 }
+
+type Env map[string]string
+
+type ClearEnv struct{}
