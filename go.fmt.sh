@@ -9,5 +9,6 @@ function gothing {
 
 gothing log
 gothing picnic
+gothing iox
 gothing prom
 gothing psh

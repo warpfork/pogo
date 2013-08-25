@@ -9,5 +9,6 @@ function gotest {
 
 gotest log
 gotest picnic
+gotest iox
 gotest prom
 gotest psh
