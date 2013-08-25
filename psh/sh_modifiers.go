@@ -1,5 +1,9 @@
 package psh
 
+import (
+	"os"
+)
+
 type commandTemplate struct {
 	cmd string
 
@@ -41,6 +45,12 @@ type Opts struct {
 	 * Can be all the same things Out can be, and does the same thing, but for stderr.
 	 */
 	Err interface{}
+}
+
+var DefaultIO = Opts{
+	In:  os.Stdin,
+	Out: os.Stdout,
+	Err: os.Stderr,
 }
 
 type Env map[string]string
