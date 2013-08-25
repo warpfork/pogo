@@ -27,7 +27,6 @@ type Opts struct {
 
 	/**
 	 * Can be a:
-	 *   - []byte, which will be written to literally
 	 *   - bytes.Buffer, which will be written to literally
 	 *   - io.Writer, which will be written to streamingly, flushed to whenever the command flushes
 	 *   - chan<- string, which will be written to streamingly, flushed to whenever a line break occurs in the output

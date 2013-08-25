@@ -72,29 +72,3 @@ func TestWriterToChanByteSlice(t *testing.T) {
 	_, open := <- ch
 	assert.Equal(false, open)
 }
-
-func TestWriterToByteSlice(t *testing.T) {
-	assert := assrt.NewAssert(t)
-
-	bytes := make([]byte, 0, 9)
-	w := WriterToByteSlice(bytes)
-	go func() {
-		w.Write([]byte("asdf"))
-		w.Write([]byte(""))
-		w.Write([]byte("\nwakawaka"))
-		w.Write([]byte("\tz"))
-	}()
-
-	assert.Equal(
-		9,
-		len(bytes),
-	)
-	assert.Equal(
-		9,
-		cap(bytes),
-	)
-	assert.Equal(
-		"asdf\nwaka",
-		string(bytes),
-	)
-}
