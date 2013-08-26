@@ -5,7 +5,6 @@ import (
 	"testing"
 )
 
-// Test that we can exec something, wait, and it returns quickly and with an exit code.
 func TestShConstruction(t *testing.T) {
 	assert := assrt.NewAssert(t)
 
