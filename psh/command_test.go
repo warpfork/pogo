@@ -48,10 +48,12 @@ func TestPshWaitTimeout(t *testing.T) {
 		false,
 		cmdr.WaitSoon(20*time.Millisecond),
 	)
-	assert.Equal(
-		-1,
-		cmdr.exitCode,
-	)
+	// the go race detector would flag this as a race.
+	// and correctly so!  that's why this field is private.
+	// assert.Equal(
+	// 	-1,
+	// 	cmdr.exitCode,
+	// )
 	assert.Equal(
 		RUNNING,
 		cmdr.State(),
