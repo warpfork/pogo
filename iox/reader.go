@@ -18,7 +18,11 @@ func ReaderFromInterface(x interface{}) io.Reader {
 		return &y
 	case <-chan string:
 		return ReaderFromChanString(y)
+	case chan string:
+		return ReaderFromChanString(y)
 	case <-chan []byte:
+		return ReaderFromChanByteSlice(y)
+	case chan []byte:
 		return ReaderFromChanByteSlice(y)
 	default:
 		return nil

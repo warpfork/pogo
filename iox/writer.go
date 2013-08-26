@@ -13,7 +13,11 @@ func WriterFromInterface(x interface{}) io.Writer {
 		return &y
 	case chan<- string:
 		return WriterToChanString(y)
+	case chan string:
+		return WriterToChanString(y)
 	case chan<- []byte:
+		return WriterToChanByteSlice(y)
+	case chan []byte:
 		return WriterToChanByteSlice(y)
 	default:
 		return nil
