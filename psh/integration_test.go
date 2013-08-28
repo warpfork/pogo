@@ -151,3 +151,14 @@ func TestIntegration_ShOutput(t *testing.T) {
 		cmd.Output(),
 	)
 }
+
+func TestIntegration_ShCombinedOutput(t *testing.T) {
+	assert := assrt.NewAssert(t)
+
+	cmd := Sh("sh")("-c", "echo out ; echo err 1>&2 ;")
+
+	assert.Equal(
+		"out\nerr\n",
+		cmd.CombinedOutput(),
+	)
+}

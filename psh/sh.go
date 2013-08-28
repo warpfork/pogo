@@ -226,3 +226,12 @@ func (f Shfn) Output() string {
 	f.BakeOpts(Opts{Out: &buf}).Run()
 	return buf.String()
 }
+
+/**
+ * Same as Output(), but acts on both stdout and stderr.
+ */
+func (f Shfn) CombinedOutput() string {
+	var buf bytes.Buffer
+	f.BakeOpts(Opts{Out: &buf, Err: &buf}).Run()
+	return buf.String()
+}
