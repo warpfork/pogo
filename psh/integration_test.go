@@ -140,3 +140,14 @@ func TestIntegration_ShStreamingInputAndOutputWithStringChan(t *testing.T) {
 		catCmd.GetExitCode(),
 	)
 }
+
+func TestIntegration_ShOutput(t *testing.T) {
+	assert := assrt.NewAssert(t)
+
+	cmd := Sh("sh")("-c", "echo out ; echo err 1>&2 ;")
+
+	assert.Equal(
+		"out\n",
+		cmd.Output(),
+	)
+}

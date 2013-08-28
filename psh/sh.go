@@ -1,6 +1,7 @@
 package psh
 
 import (
+	"bytes"
 	"fmt"
 	"os/exec"
 	"polydawn.net/gosh/iox"
@@ -207,4 +208,21 @@ func (f Shfn) Run() {
 		}
 	}
 	panic(FailureExitCode{cmdname: cmdt.cmd, code: exitCode})
+}
+
+/**
+ * Starts execution of the command, waits until completion, and then returns the
+ * accumulated output of the command as a string.  As with Run(), a panic will be
+ * emitted if the command does not execute successfully.
+ *
+ * This does not include output from stderr; use CombinedOutput() for that.
+ *
+ * This acts as BakeOpts() with a value set on the Out field; that is, it will
+ * overrule any previously configured output, and also it has no effect on where
+ * stderr will go.
+ */
+func (f Shfn) Output() string {
+	var buf bytes.Buffer
+	f.BakeOpts(Opts{Out: &buf}).Run()
+	return buf.String()
 }
