@@ -6,7 +6,7 @@ import (
 	"polydawn.net/gosh/iox"
 )
 
-func Sh(cmd string) sh {
+func Sh(cmd string) Shfn {
 	var cmdt commandTemplate
 	cmdt.cmd = cmd
 	cmdt.env = getOsEnv()
@@ -14,7 +14,7 @@ func Sh(cmd string) sh {
 	return enclose(&cmdt)
 }
 
-type sh func(args ...interface{}) sh
+type Shfn func(args ...interface{}) Shfn
 
 // private type, used exactly once to create a const nobody else can create so we can use it as a flag to trigger private behavior
 type expose_t bool
@@ -23,22 +23,22 @@ const expose expose_t = true
 
 type exposer struct{ cmdt *commandTemplate }
 
-func closure(cmdt commandTemplate, args ...interface{}) sh {
+func closure(cmdt commandTemplate, args ...interface{}) Shfn {
 	if len(args) == 0 {
-		// an empty call is a synonym for sh.Run().
-		// if you want to just get a RunningCommand reference to track, use sh.Start() instead.
+		// an empty call is a synonym for Shfn.Run().
+		// if you want to just get a RunningCommand reference to track, use Shfn.Start() instead.
 		enclose(&cmdt).Run()
 		return nil
 	} else if args[0] == expose {
 		// produce a function that when called with an exposer, exposes its cmdt.
-		return func(x ...interface{}) sh {
+		return func(x ...interface{}) Shfn {
 			t := x[0].(*exposer)
 			t.cmdt = &cmdt
 			return nil
 		}
 	} else {
 		// examine each of the arguments, modify our (already forked) cmdt, and
-		//  return a new callable sh closure with the newly baked command template.
+		//  return a new callable Shfn closure with the newly baked command template.
 		for _, rarg := range args {
 			switch arg := rarg.(type) {
 			case string:
@@ -57,19 +57,19 @@ func closure(cmdt commandTemplate, args ...interface{}) sh {
 	}
 }
 
-func (f sh) expose() *commandTemplate {
+func (f Shfn) expose() *commandTemplate {
 	var t exposer
 	f(expose)(&t)
 	return t.cmdt
 }
 
-func enclose(cmdt *commandTemplate) sh {
-	return func(x ...interface{}) sh {
+func enclose(cmdt *commandTemplate) Shfn {
+	return func(x ...interface{}) Shfn {
 		return closure(*cmdt, x...)
 	}
 }
 
-func (f sh) BakeArgs(args ...string) sh {
+func (f Shfn) BakeArgs(args ...string) Shfn {
 	return enclose(f.expose().bakeArgs(args...))
 }
 
@@ -78,7 +78,7 @@ func (cmdt *commandTemplate) bakeArgs(args ...string) *commandTemplate {
 	return cmdt
 }
 
-func (f sh) BakeEnv(args Env) sh {
+func (f Shfn) BakeEnv(args Env) Shfn {
 	return enclose(f.expose().bakeEnv(args))
 }
 
@@ -93,7 +93,7 @@ func (cmdt *commandTemplate) bakeEnv(args Env) *commandTemplate {
 	return cmdt
 }
 
-func (f sh) ClearEnv() sh {
+func (f Shfn) ClearEnv() Shfn {
 	return enclose(f.expose().clearEnv())
 }
 
@@ -102,7 +102,7 @@ func (cmdt *commandTemplate) clearEnv() *commandTemplate {
 	return cmdt
 }
 
-func (f sh) BakeOpts(args ...Opts) sh {
+func (f Shfn) BakeOpts(args ...Opts) Shfn {
 	return enclose(f.expose().bakeOpts(args...))
 }
 
@@ -132,7 +132,7 @@ func (cmdt *commandTemplate) bakeOpts(args ...Opts) *commandTemplate {
  * which can be used to track execution of the command, configure exit listeners,
  * etc.
  */
-func (f sh) Start() *RunningCommand {
+func (f Shfn) Start() *RunningCommand {
 	cmdt := f.expose()
 	rcmd := exec.Command(cmdt.cmd, cmdt.args...)
 
@@ -152,7 +152,7 @@ func (f sh) Start() *RunningCommand {
 	}
 	if cmdt.In != nil {
 		switch in := cmdt.In.(type) {
-		case sh:
+		case Shfn:
 			//TODO something marvelous
 			panic(fmt.Errorf("not yet implemented"))
 		default:
@@ -182,7 +182,7 @@ func (f sh) Start() *RunningCommand {
 	return cmd
 }
 
-func (f sh) Run() {
+func (f Shfn) Run() {
 	cmdt := f.expose()
 	cmd := f.Start()
 	cmd.Wait()
