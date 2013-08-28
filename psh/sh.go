@@ -182,6 +182,18 @@ func (f Shfn) Start() *RunningCommand {
 	return cmd
 }
 
+/**
+ * Starts execution of the command, and waits until completion before returning.
+ *
+ * The is exactly the behavior of a no-arg invokation on an Shfn, i.e.
+ *   `Sh("echo")()`
+ * and
+ *   `Sh("echo").Run()`
+ * are interchangable and behave identically.
+ *
+ * Use the Start() method instead if you need to run a task in the background, or
+ * if you otherwise need greater control over execution.
+ */
 func (f Shfn) Run() {
 	cmdt := f.expose()
 	cmd := f.Start()
