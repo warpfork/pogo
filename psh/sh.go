@@ -109,7 +109,7 @@ func (f Shfn) BakeOpts(args ...Opts) Shfn {
 
 func (cmdt *commandTemplate) bakeOpts(args ...Opts) *commandTemplate {
 	for _, arg := range args {
-		if arg.Cwd != nil {
+		if arg.Cwd != "" {
 			cmdt.Cwd = arg.Cwd
 		}
 		if arg.In != nil {
@@ -148,8 +148,8 @@ func (f Shfn) Start() *RunningCommand {
 	}
 
 	// set up opts (cwd/stdin/stdout/stderr)
-	if cmdt.Cwd != nil {
-		rcmd.Dir = *cmdt.Cwd
+	if cmdt.Cwd != "" {
+		rcmd.Dir = cmdt.Cwd
 	}
 	if cmdt.In != nil {
 		switch in := cmdt.In.(type) {

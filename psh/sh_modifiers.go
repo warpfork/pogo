@@ -15,7 +15,7 @@ type commandTemplate struct {
 }
 
 type Opts struct {
-	Cwd *string
+	Cwd string
 
 	/**
 	 * Can be a:
