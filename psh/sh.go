@@ -184,6 +184,8 @@ func (f Shfn) Start() *RunningCommand {
 
 /**
  * Starts execution of the command, and waits until completion before returning.
+ * If the command does not execute successfully, a panic of type FailureExitCode
+ * will be emitted; use Opts.OkExit to configure what is considered success.
  *
  * The is exactly the behavior of a no-arg invokation on an Shfn, i.e.
  *   `Sh("echo")()`
