@@ -94,7 +94,7 @@ func (cmd *RunningCommand) IsDone() bool {
 	return state == FINISHED || state == PANICKED
 }
 
-/** Returns true if the command is finished either gracefully.  (A nonzero exit code may still be set.) */
+/** Returns true if the command is finished gracefully.  (A nonzero exit code may still be set.) */
 func (cmd *RunningCommand) IsFinishedGracefully() bool {
 	state := cmd.State()
 	return state == FINISHED
