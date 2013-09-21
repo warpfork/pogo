@@ -11,4 +11,4 @@ gothing log
 gothing picnic
 gothing iox
 gothing prom
-gothing psh
+gothing gosh

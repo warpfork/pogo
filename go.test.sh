@@ -11,4 +11,4 @@ gotest log
 gotest picnic
 gotest iox
 gotest prom
-gotest psh
+gotest gosh
