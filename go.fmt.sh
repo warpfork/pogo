@@ -4,7 +4,7 @@ export GOPATH="$PWD"/.gopath/
 
 function gothing {
 	package="$1"; shift
-	go fmt "polydawn.net/gosh/$package" "$@"
+	go fmt "polydawn.net/pogo/$package" "$@"
 }
 
 gothing log

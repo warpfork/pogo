@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package psh
+package gosh
 
 import (
 	"bytes"
 	"fmt"
 	"os/exec"
-	"polydawn.net/gosh/iox"
+	"polydawn.net/pogo/iox"
 )
 
 func Sh(cmd string) Shfn {
