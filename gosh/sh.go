@@ -171,23 +171,17 @@ func (f Command) Start() *RunningCommand {
 			//TODO something marvelous
 			panic(fmt.Errorf("not yet implemented"))
 		default:
-			inreader := iox.ReaderFromInterface(in)
-			//TODO if this is nil, raise a (typed) panic (which we don't have a type for yet)
-			rcmd.Stdin = inreader
+			rcmd.Stdin = iox.ReaderFromInterface(in)
 		}
 	}
 	if cmdt.Out != nil {
-		out := iox.WriterFromInterface(cmdt.Out)
-		//TODO if this is nil, raise a (typed) panic (which we don't have a type for yet)
-		rcmd.Stdout = out
+		rcmd.Stdout = iox.WriterFromInterface(cmdt.Out)
 	}
 	if cmdt.Err != nil {
 		if cmdt.Err == cmdt.Out {
 			rcmd.Stderr = rcmd.Stdout
 		} else {
-			out := iox.WriterFromInterface(cmdt.Err)
-			//TODO if this is nil, raise a (typed) panic (which we don't have a type for yet)
-			rcmd.Stderr = out
+			rcmd.Stderr = iox.WriterFromInterface(cmdt.Err)
 		}
 	}
 
