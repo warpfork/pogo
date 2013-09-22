@@ -86,3 +86,25 @@ func TestWriterToChanByteSlice(t *testing.T) {
 	_, open := <-ch
 	assert.Equal(false, open)
 }
+
+type clearlyNotAWriter struct{}
+
+func TestWriterUnrefinable(t *testing.T) {
+	assert := assrt.NewAssert(t)
+
+	var x clearlyNotAWriter
+
+	defer func() {
+		err := recover()
+		switch y := err.(type) {
+		case error:
+			assert.Equal(
+				"WriterFromInterface cannot refine type \"iox.clearlyNotAWriter\" to a Reader",
+				y.Error(),
+			)
+		default:
+			t.Fatal("recover returned a non-error type!")
+		}
+	}()
+	WriterFromInterface(x)
+}

@@ -39,7 +39,7 @@ func ReaderFromInterface(x interface{}) io.Reader {
 	case chan []byte:
 		return ReaderFromChanByteSlice(y)
 	default:
-		return nil
+		panic(ReaderUnrefinableFromInterface{wat: y})
 	}
 }
 

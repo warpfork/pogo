@@ -34,7 +34,7 @@ func WriterFromInterface(x interface{}) io.Writer {
 	case chan []byte:
 		return WriterToChanByteSlice(y)
 	default:
-		return nil
+		panic(WriterUnrefinableFromInterface{wat: y})
 	}
 }
 

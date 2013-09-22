@@ -60,3 +60,25 @@ func TestReaderFromByteSlice(t *testing.T) {
 		output.String(),
 	)
 }
+
+type clearlyNotAReader struct{}
+
+func TestReaderUnrefinable(t *testing.T) {
+	assert := assrt.NewAssert(t)
+
+	var x clearlyNotAReader
+
+	defer func() {
+		err := recover()
+		switch y := err.(type) {
+		case error:
+			assert.Equal(
+				"ReaderFromInterface cannot refine type \"iox.clearlyNotAReader\" to a Reader",
+				y.Error(),
+			)
+		default:
+			t.Fatal("recover returned a non-error type!")
+		}
+	}()
+	ReaderFromInterface(x)
+}
