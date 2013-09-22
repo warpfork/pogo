@@ -176,3 +176,20 @@ func TestIntegration_ShCombinedOutput(t *testing.T) {
 		cmd.CombinedOutput(),
 	)
 }
+
+func TestIntegration_NotATty(t *testing.T) {
+	assert := assrt.NewAssert(t)
+
+	out := make(chan string, 1)
+	cmd := Sh("tty")(Opts{Out: out})
+	p := cmd.Start()
+
+	assert.Equal(
+		"not a tty\n",
+		<- out,
+	)
+	assert.Equal(
+		1,
+		p.GetExitCode(),
+	)
+}
