@@ -41,7 +41,7 @@ func TestReaderFromChanString(t *testing.T) {
 	)
 }
 
-func TestReaderFromByteSlice(t *testing.T) {
+func TestReaderFromChanByteSlice(t *testing.T) {
 	assert := assrt.NewAssert(t)
 
 	ch := make(chan []byte)
