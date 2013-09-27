@@ -82,3 +82,19 @@ func TestReaderUnrefinable(t *testing.T) {
 	}()
 	ReaderFromInterface(x)
 }
+
+func TestReaderFromChanByteSliceIsClosable(t *testing.T) {
+	ch := make(chan []byte)
+	reader := ReaderFromInterface(ch)
+	if _, ok := reader.(io.ReadCloser); !ok {
+		t.Fatalf("did not get a reader that supported close; did want")
+	}
+}
+
+func TestReaderFromChanReadonlyByteSliceIsNotClosable(t *testing.T) {
+	ch := make(<-chan []byte)
+	reader := ReaderFromInterface(ch)
+	if _, ok := reader.(io.ReadCloser); ok {
+		t.Fatalf("got a reader that supported close; did not want")
+	}
+}
