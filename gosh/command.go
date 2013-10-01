@@ -114,10 +114,11 @@ func (cmd *RunningCommand) IsFinishedGracefully() bool {
 	return state == FINISHED
 }
 
-func (cmd *RunningCommand) Start() {
+func (cmd *RunningCommand) Start() *RunningCommand {
 	if err := cmd.startCalmly(); err != nil {
 		panic(err)
 	}
+	return cmd
 }
 
 func (cmd *RunningCommand) startCalmly() error {
