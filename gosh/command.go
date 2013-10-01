@@ -169,7 +169,7 @@ func (cmd *RunningCommand) finalState(err error) {
 			cmd.err = err
 			atomic.StoreInt32(&cmd.state, PANICKED)
 		}
-		//TODO iterate over exit listeners
+		// iterate over exit listeners
 		for _, cb := range cmd.exitListeners {
 			func() {
 				defer recover()
