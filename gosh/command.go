@@ -180,6 +180,17 @@ func (cmd *RunningCommand) finalState(err error) {
 	close(cmd.exitCh)
 }
 
+/*
+	Returns the pid of the process, or -1 if it isn't started yet.
+*/
+func (cmd *RunningCommand) Pid() int {
+	if cmd.IsStarted() {
+		return cmd.cmd.Process.Pid
+	} else {
+		return -1
+	}
+}
+
 /**
  * Add a function to be called when this command completes.
  *
