@@ -15,6 +15,7 @@
 package gosh
 
 import (
+	"fmt"
 	"os/exec"
 	"sync"
 	"sync/atomic"
@@ -140,23 +141,61 @@ func (cmd *RunningCommand) startCalmly() error {
 }
 
 func (cmd *RunningCommand) waitAndHandleExit() {
-	err := cmd.cmd.Wait()
+	exitCode := -1
+	var err error
+	for err == nil && exitCode == -1 {
+		exitCode, err = cmd.waitTry()
+	}
+
+	// Do one last Wait for good ol' times sake.  And to use the Cmd.closeDescriptors feature.
+	cmd.cmd.Wait()
 
 	cmd.mutex.Lock()
 	defer cmd.mutex.Unlock()
 
-	if err == nil {
-		cmd.exitCode = 0
-	} else if exitError, ok := err.(*exec.ExitError); ok {
-		if waitStatus, ok := exitError.Sys().(syscall.WaitStatus); ok {
-			cmd.exitCode = waitStatus.ExitStatus()
+	cmd.exitCode = exitCode
+	cmd.finalState(err)
+}
+
+func (cmd *RunningCommand) waitTry() (int, error) {
+	// The docs for os.Process.Wait() state "Wait waits for the Process to exit".
+	// IT LIES.
+	//
+	// On unixy systems, under some states, os.Process.Wait() *also* returns for signals and other state changes.  See comments below, where waitStatus is being checked.
+	// To actually wait for the process to exit, you have to Wait() repeatedly and check if the system-dependent codes are representative of real exit.
+	//
+	// You can *not* use os/exec.Cmd.Wait() to reliably wait for a command to exit on unix.  Can.  Not.  Do it.
+	// os/exec.Cmd.Wait() explicitly sets a flag to see if you've called it before, and tells you to go to hell if you have.
+	// Since Cmd.Wait() uses Process.Wait(), the latter of which cannot function correctly without repeated calls, and the former of which forbids repeated calls...
+	// Yep, it's literally impossible to use os/exec.Cmd.Wait() correctly on unix.
+	//
+	processState, err := cmd.cmd.Process.Wait()
+	if err != nil {
+		return -1, err
+	}
+
+	if waitStatus, ok := processState.Sys().(syscall.WaitStatus); ok {
+		if waitStatus.Exited() {
+			return waitStatus.ExitStatus(), nil
+		} else if waitStatus.Signaled() {
+			// In bash, when a processs ends from a signal, the $? variable is set to 128+SIG.
+			// We follow that same convention here.
+			// So, a process terminated by ctrl-C returns 130.  A script that died to kill-9 returns 137.
+			return int(waitStatus.Signal()) + 128, nil
 		} else {
-			panic(exitError) //TODO: damage control better.  consider setting some kind of CommandMonitorError.
+			// This should be more or less unreachable.
+			//  ... the operative word there being "should".  Read: "you wish".
+			// WaitStatus also defines Continued and Stopped states, but in practice, they don't (typically) appear here,
+			//  because deep down, syscall.Wait4 is being called with options=0, and getting those states would require
+			//  syscall.Wait4 being called with WUNTRACED or WCONTINUED.
+			// However, syscall.Wait4 may also return the Continued and Stoppe states if ptrace() has been attached to the child,
+			//  so, really, anything is possible here.
+			// And thus, we have to return a special code here that causes wait to be tried in a loop.
+			return -1, nil
 		}
 	} else {
-		panic(err) //TODO: damage control better.  consider setting some kind of CommandMonitorError.
+		panic(fmt.Errorf("gosh only works systems with posix-style process semantics."))
 	}
-	cmd.finalState(nil)
 }
 
 func (cmd *RunningCommand) finalState(err error) {
